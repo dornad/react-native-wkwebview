@@ -29,6 +29,7 @@
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingStart;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingFinish;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingError;
+@property (nonatomic, copy) RCTDirectEventBlock onNavigationError;
 @property (nonatomic, copy) RCTDirectEventBlock onShouldStartLoadWithRequest;
 @property (nonatomic, copy) RCTDirectEventBlock onProgress;
 @property (nonatomic, copy) RCTDirectEventBlock onMessage;
@@ -517,6 +518,9 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
 
 - (void)webView:(__unused WKWebView *)webView didFailProvisionalNavigation:(__unused WKNavigation *)navigation withError:(NSError *)error
 {
+  NSLog(@"[RCTWkWebview][webView:didFailProvisionalNavigation:withError:] Navigation : %@", navigation);
+  NSLog(@"[RCTWkWebview][webView:didFailProvisionalNavigation:withError:] Error : %@", error);
+  
   if (_onLoadingError) {
     if ([error.domain isEqualToString:NSURLErrorDomain] && error.code == NSURLErrorCancelled) {
       // NSURLErrorCancelled is reported when a page has a redirect OR if you load
@@ -535,6 +539,24 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
     _onLoadingError(event);
   }
 }
+
+- (void)webView:(WKWebView *)webView didFailNavigation:(__unused WKNavigation *)navigation withError:(NSError *)error {
+  
+  NSLog(@"[RCTWkWebview][webView:didFailNavigation:withError:] Navigation : %@", navigation);
+  NSLog(@"[RCTWkWebview][webView:didFailNavigation:withError:] Error : %@", error);
+  
+  if (_onNavigationError) {
+    
+    NSMutableDictionary<NSString*, id> *eevent = [self baseEvent];
+    [event addEntriesFromDictionary:@{
+                                      @"domain": error.domain,
+                                      @"code": @(error.code),
+                                      @"description": error.localizedDescription,
+                                      }];
+    _onNavigationError(event);
+  }
+}
+
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(__unused WKNavigation *)navigation
 {

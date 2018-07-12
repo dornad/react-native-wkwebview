@@ -1,23 +1,24 @@
 'use strict';
 
-import React from 'react';
-import PropTypes from 'prop-types';
 import ReactNative, {
-  requireNativeComponent,
+  ActivityIndicator,
   EdgeInsetsPropType,
+  NativeModules,
   StyleSheet,
+  Text,
   UIManager,
   View,
   ViewPropTypes,
-  NativeModules,
-  Text,
-  ActivityIndicator
+  requireNativeComponent
 } from 'react-native';
 
-import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
+import PropTypes from 'prop-types';
+import React from 'react';
 import deprecatedPropType from 'react-native/Libraries/Utilities/deprecatedPropType';
 import invariant from 'fbjs/lib/invariant';
 import keyMirror from 'fbjs/lib/keyMirror';
+import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
+
 const WKWebViewManager = NativeModules.WKWebViewManager;
 
 var BGWASH = 'rgba(255,255,255,0.8)';
@@ -347,6 +348,7 @@ class WKWebView extends React.Component {
         onLoadingStart={this._onLoadingStart}
         onLoadingFinish={this._onLoadingFinish}
         onLoadingError={this._onLoadingError}
+        onNavigationError={this._onNavigationError}
         messagingEnabled={messagingEnabled}
         onProgress={this._onProgress}
         onMessage={this._onMessage}
@@ -474,6 +476,19 @@ class WKWebView extends React.Component {
     onError && onError(event);
     onLoadEnd && onLoadEnd(event);
     console.warn('Encountered an error loading page', event.nativeEvent);
+
+    this.setState({
+      lastErrorEvent: event.nativeEvent,
+      viewState: WebViewState.ERROR
+    });
+  };
+
+  _onNavigationError = (event: Event) => {
+    event.persist();
+    const { onError, onLoadEnd } = this.props;
+    onError && onError(event);
+    onLoadEnd && onLoadEnd(event);
+    console.warn('Encountered an error on navigation to page', event.nativeEvent);
 
     this.setState({
       lastErrorEvent: event.nativeEvent,
